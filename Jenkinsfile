@@ -7,7 +7,7 @@ pipeline{
     stages{
         stage("git checkout"){
             steps{
-                checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/badrul-devops/springbootApp.git']])
+                checkout scmGit(branches: [[name: '*/develop']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/badrul-devops/springbootApp.git']])
             }
         }
         stage("build"){
