@@ -1,65 +1,49 @@
-pipeline {
+pipeline{
     agent any
-    environment {
-        DOCKER_IMAGE_NAME = "api-demo"
-        BRANCHE_DEV = 'origin/develop'
-        BRANCHE_PROD = 'origin/main'
-        DOCKER_IMAGE_TAG = "localhost:8082"
+    tools{
+        jdk 'java'
+        maven 'maven'
     }
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-                echo 'Pulling... ' + env.GIT_BRANCH
+    stages{
+        stage("git checkout"){
+            steps{
+                checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/badrul-devops/springbootApp.git']])
             }
         }
-        stage('Tests') {
-            steps {
-                sh 'mvn test'
+        stage("build"){
+            steps{
+                sh "mvn clean package"
             }
         }
-        stage('Sonarqube Analysis') {
-            steps {
-                script {
-                    withSonarQubeEnv('sonar-server') {
-                        sh "mvn sonar:sonar -Dintegration-tests.skip=true -Dmaven.test.failure.ignore=true"
-                    }
-                    timeout(time: 1, unit: 'MINUTES') {
-                        def qg = waitForQualityGate()
-                        if (qg.status != 'OK') {
-                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
-                        }
-                    }
-                }
-            }
-        }
-        stage('Maven Build and Package') {
-            steps {
-                script {
-                    sh 'mvn clean package -DskipTests'
-                }
-            }
-            post {
-                success {
-                    archiveArtifacts 'target/*.jar'
-                }
-            }
-        }
-    }
-}
+        stage("sonarscan"){
+            steps{
+                script{
+                    withSonarQubeEnv(credentialsId: 'sonar-jenkins') {
 
-def getEnvVersion(envName) {
-    def pom = readMavenPom file: 'pom.xml'
-    // get the current development version
-    artifactVersion = "${pom.version}"
-    def gitCommit = sh(returnStdout: true, script: 'git rev-parse HEAD').trim()
-    def versionNumber;
-    if (gitCommit == null) {
-        versionNumber = artifactVersion + "-${envName}." + env.BUILD_NUMBER;
-    } else {
-        versionNumber = artifactVersion + "-${envName}." + env.BUILD_NUMBER + '.' + gitCommit.take(8);
+                        sh 'mvn sonar:sonar'
+                    }
+                }
+            }
+        }
+        stage("docker build"){
+            steps{
+                sh "docker build -t springbootapp ."
+            }
+        }
+        stage("docker push"){
+            steps{
+                script{
+                    echo "pushing the image to dockerhub"
+                    withCredentials([usernamePassword(credentialsId: "dockerHub",passwordVariable: "dockerHubPass" ,usernameVariable: "dockerHubUser" )]){
+                        sh "docker tag springbootapp ${env.dockerHubUser}/springbootapp:latest"
+                        sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPass}"
+                        sh "docker push  ${env.dockerHubUser}/springbootapp:latest"
+                    }
+                }
+            }
+
+
+        }
+
     }
-    print 'build ${environnement} versions...'
-    print versionNumber
-    return versionNumber
 }
