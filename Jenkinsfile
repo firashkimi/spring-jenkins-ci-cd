@@ -47,10 +47,9 @@ pipeline{
             steps{
                 script{
                     echo "pushing the image to dockerhub"
-                    withCredentials([usernamePassword(credentialsId: '56f36fe8-8cd3-473b-af3a-6522823b91e8', passwordVariable: 'dockerHubPass', usernameVariable: 'dockerHubUser')]) {
-                        sh "docker tag springbootapp ${env.dockerHubUser}/springbootapp:latest"
-                        sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPass}"
-                        sh "docker push  ${env.dockerHubUser}/springbootapp:latest"
+                    withCredentials([string(credentialsId: 'dockerhub-pwd', variable: 'dockerhubpwd')]) {
+                        sh "docker login -u firas709 -p ${dockerhubpwd}"
+                        sh "docker push  firas709/springbootappjenkins:latest"
                     }
                 }
             }
