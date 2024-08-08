@@ -40,7 +40,7 @@ pipeline{
         }
         stage("docker build"){
             steps{
-                sh "docker build -t springbootapp ."
+                sh "docker build -t firas709/springbootapp ."
             }
         }
         stage("docker push"){
@@ -49,7 +49,7 @@ pipeline{
                     echo "pushing the image to dockerhub"
                     withCredentials([string(credentialsId: 'dockerhub-pwd', variable: 'dockerhubpwd')]) {
                         sh "docker login -u firas709 -p ${dockerhubpwd}"
-                        sh "docker push  firas709/springbootappjenkins:latest"
+                        sh "docker push  firas709/springbootapp:latest"
                     }
                 }
             }
