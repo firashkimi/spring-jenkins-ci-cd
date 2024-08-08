@@ -1,9 +1,5 @@
 pipeline{
     agent any
-    tools{
-        jdk 'java'
-        maven 'maven'
-    }
     environment {
         BRANCHE_DEV = 'origin/main'
         DOCKER_IMAGE_NAME = "devops-ci-cd"
